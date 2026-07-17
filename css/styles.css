@@ -231,6 +231,10 @@ body {
 
 /* ---------- Écran 2 : parcours annoté ---------- */
 
+.contenu-parcours {
+  padding-bottom: 112px;
+}
+
 .parcours {
   list-style: none;
   position: relative;
@@ -441,7 +445,7 @@ body {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  margin-top: 20px;
+  margin: 0;
   padding: 16px;
   border: none;
   border-radius: var(--rayon);
@@ -454,6 +458,20 @@ body {
 }
 
 .btn-conduite:active { filter: brightness(1.1); }
+
+.parcours-action {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--bordure);
+  background: var(--fond-carte);
+  box-shadow: 0 -6px 18px rgba(27, 36, 48, 0.1);
+  z-index: 10;
+}
 
 /* ---------- Écrans sombres : vision future et démo du service ---------- */
 
