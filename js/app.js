@@ -445,55 +445,100 @@
       carte.remove();
       carte = null;
     }
-    if (typeof L === "undefined") {
+    if (typeof maplibregl === "undefined") {
       conteneur.innerHTML = '<div class="sim-carte-erreur">Le fond de carte n\'a pas pu être chargé. Vérifiez la connexion Internet.</div>';
       return;
     }
 
-    carte = L.map("sim-carte", {
-      zoomControl: false,
+    sim.cartePrete = false;
+    carte = new maplibregl.Map({
+      container: "sim-carte",
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          }
+        },
+        layers: [{ id: "osm", type: "raster", source: "osm" }]
+      },
+      center: [TRAJET_48.coordinates[0][1], TRAJET_48.coordinates[0][0]],
+      zoom: 16.8,
+      pitch: 32,
+      bearing: 0,
       attributionControl: true,
-      dragging: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      touchZoom: false,
-      boxZoom: false,
-      keyboard: false
-    });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(carte);
-
-    sim.lignePassee = L.polyline([], { color: "#7d8796", weight: 8, opacity: 0.65 }).addTo(carte);
-    sim.ligneRestante = L.polyline(TRAJET_48.coordinates, {
-      color: "#7657ff", weight: 9, opacity: 0.92
-    }).addTo(carte);
-
-    sim.marqueursArrets = sim.arrets.map(function (arret, index) {
-      return L.circleMarker([arret.lat, arret.lon], {
-        radius: index === 0 || index === sim.arrets.length - 1 ? 6 : 4,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: "#7657ff",
-        fillOpacity: 1
-      }).bindTooltip(arret.nom).addTo(carte);
+      interactive: false
     });
 
-    sim.points.forEach(function (point) {
-      var couleur = NIVEAUX[point.donnees.niveau].couleur;
-      var index = sim.indexArrets[point.arretIndex];
-      L.circleMarker(TRAJET_48.coordinates[index], {
-        radius: 7,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: couleur,
-        fillOpacity: 1
-      }).bindTooltip(point.donnees.nom).addTo(carte);
-    });
+    carte.on("load", function () {
+      if (!sim || !carte) return;
+      carte.addSource("trajet-passe", { type: "geojson", data: ligneGeoJson([]) });
+      carte.addSource("trajet-restant", {
+        type: "geojson",
+        data: ligneGeoJson(TRAJET_48.coordinates)
+      });
+      carte.addLayer({
+        id: "trajet-passe",
+        type: "line",
+        source: "trajet-passe",
+        paint: { "line-color": "#7d8796", "line-width": 8, "line-opacity": 0.68 }
+      });
+      carte.addLayer({
+        id: "trajet-restant",
+        type: "line",
+        source: "trajet-restant",
+        paint: { "line-color": "#7657ff", "line-width": 9, "line-opacity": 0.94 }
+      });
 
-    carte.setView(TRAJET_48.coordinates[0], 17);
-    setTimeout(function () { if (carte) carte.invalidateSize(); }, 0);
+      sim.marqueursArrets = sim.arrets.map(function (arret, index) {
+        var element = document.createElement("span");
+        element.className = "sim-arret-carte" +
+          (index === 0 || index === sim.arrets.length - 1 ? " terminus" : "");
+        element.title = arret.nom;
+        return new maplibregl.Marker({ element: element, anchor: "center" })
+          .setLngLat([arret.lon, arret.lat])
+          .addTo(carte);
+      });
+
+      sim.points.forEach(function (point) {
+        var element = document.createElement("span");
+        element.className = "sim-point-carte";
+        element.style.background = NIVEAUX[point.donnees.niveau].couleur;
+        element.title = point.donnees.nom;
+        var coord = TRAJET_48.coordinates[sim.indexArrets[point.arretIndex]];
+        new maplibregl.Marker({ element: element, anchor: "center" })
+          .setLngLat([coord[1], coord[0]])
+          .addTo(carte);
+      });
+
+      var bus = document.createElement("div");
+      bus.className = "sim-bus-carte";
+      bus.setAttribute("aria-label", "Bus ligne 48");
+      bus.innerHTML = '<span><b>▲</b><em>48</em></span>';
+      sim.marqueurBus = new maplibregl.Marker({
+        element: bus,
+        anchor: "center",
+        rotationAlignment: "viewport",
+        pitchAlignment: "viewport"
+      }).setLngLat([TRAJET_48.coordinates[0][1], TRAJET_48.coordinates[0][0]]).addTo(carte);
+
+      sim.cartePrete = true;
+      majAffichage();
+    });
+  }
+
+  function ligneGeoJson(coordonnees) {
+    return {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates: coordonnees.map(function (coord) { return [coord[1], coord[0]]; })
+      }
+    };
   }
 
   function indexApresDistance(indexDepart, metres) {
@@ -524,7 +569,7 @@
   }
 
   function orienterCamera(indexRoute, coordonnee) {
-    if (!carte) return;
+    if (!carte || !sim.cartePrete) return;
 
     var indexDevant = indexApresDistance(indexRoute, 20);
     var coordonneeDevant = TRAJET_48.coordinates[indexDevant];
@@ -533,18 +578,14 @@
     sim.capCamera = (sim.capCamera + differenceCap(sim.capCamera, capActuel) * 0.18 + 360) % 360;
 
     var centreCamera = avancerDansDirection(coordonnee, sim.capCamera, 90);
-    carte.panTo(centreCamera, { animate: false });
-
-    var panneau = carte.getPane("mapPane");
-    var position = L.DomUtil.getPosition(panneau) || { x: 0, y: 0 };
-    var taille = carte.getSize();
-    var transformation = panneau.style.transform || "";
-    transformation = transformation.replace(/\s*rotate\([^)]*\)\s*scale\([^)]*\)\s*$/, "");
-    panneau.style.transformOrigin =
-      (taille.x / 2 - position.x) + "px " + (taille.y / 2 - position.y) + "px";
-    panneau.style.transform = transformation +
-      " rotate(" + (-sim.capCamera) + "deg) scale(1.28)";
-
+    carte.easeTo({
+      center: [centreCamera[1], centreCamera[0]],
+      bearing: sim.capCamera,
+      zoom: 16.8,
+      pitch: 32,
+      duration: 140,
+      easing: function (t) { return t; }
+    });
   }
 
   function majStatut(titre, sousTitre) {
@@ -602,21 +643,25 @@
     var indexRoute = indexFormeCourant();
     var indexEntier = Math.floor(indexRoute);
     var coordonnee = coordonneeCourante(indexRoute);
+    var positionArrondie = Math.round(sim.pos);
+    if ((sim.etat === "arret" || sim.etat === "fini") &&
+        Math.abs(sim.pos - positionArrondie) < 0.001) {
+      coordonnee = [sim.arrets[positionArrondie].lat, sim.arrets[positionArrondie].lon];
+    }
 
-    if (carte) {
+    if (carte && sim.cartePrete) {
       var passe = TRAJET_48.coordinates.slice(0, indexEntier + 1).concat([coordonnee]);
       var reste = [coordonnee].concat(TRAJET_48.coordinates.slice(indexEntier + 1));
-      sim.lignePassee.setLatLngs(passe);
-      sim.ligneRestante.setLatLngs(reste);
+      carte.getSource("trajet-passe").setData(ligneGeoJson(passe));
+      carte.getSource("trajet-restant").setData(ligneGeoJson(reste));
+      sim.marqueurBus.setLngLat([coordonnee[1], coordonnee[0]]);
       orienterCamera(indexRoute, coordonnee);
 
       var prochain = Math.min(Math.ceil(sim.pos + 0.001), sim.arrets.length - 1);
       sim.marqueursArrets.forEach(function (marqueur, index) {
-        marqueur.setStyle({
-          fillColor: index < prochain ? "#7d8796" : index === prochain ? "#ffffff" : "#7657ff",
-          color: index === prochain ? "#7657ff" : "#ffffff",
-          radius: index === prochain ? 7 : (index === 0 || index === sim.arrets.length - 1 ? 6 : 4)
-        });
+        var element = marqueur.getElement();
+        element.classList.toggle("passe", index < prochain);
+        element.classList.toggle("prochain", index === prochain);
       });
     }
 
@@ -754,7 +799,7 @@
       b.classList.toggle("actif", b.getAttribute("data-mult") === "1");
     });
     majAffichage();
-    sim.timer = setInterval(tickSimulation, 100);
+    sim.timer = setInterval(tickSimulation, 50);
   }
 
   function arreterSimulation() {
