@@ -368,6 +368,15 @@
       var debut = indexArrets[i];
       var fin = indexArrets[i + 1];
       var longueur = longueurForme(debut, fin);
+      var distances = [0];
+      var distanceCumulee = 0;
+      for (var formeIndex = debut + 1; formeIndex <= fin; formeIndex++) {
+        distanceCumulee += distanceMetres(
+          TRAJET_48.coordinates[formeIndex - 1],
+          TRAJET_48.coordinates[formeIndex]
+        );
+        distances.push(distanceCumulee);
+      }
       var direct = distanceMetres(TRAJET_48.coordinates[debut], TRAJET_48.coordinates[fin]);
       var rectitude = longueur ? direct / longueur : 0;
       var vitesseMax = longueur > 260 && rectitude > 0.82 ? 50 :
@@ -375,7 +384,8 @@
           longueur < 120 ? 28 : 36;
       var dense = Math.random() < 0.14;
       segments.push({
-        duree: hasard(9000, 14500),
+        longueur: longueur,
+        distances: distances,
         bouchon: dense,
         vitesseMax: dense ? Math.min(vitesseMax, 18) : vitesseMax,
         feu: Math.random() < 0.24 ? {
@@ -425,8 +435,18 @@
     if (sim.pos >= sim.nbSeg) return sim.indexArrets[sim.nbSeg];
     var segment = Math.max(0, Math.min(Math.floor(sim.pos), sim.nbSeg - 1));
     var fraction = sim.pos - segment;
-    return sim.indexArrets[segment] +
-      (sim.indexArrets[segment + 1] - sim.indexArrets[segment]) * fraction;
+    var donneesSegment = sim.segments[segment];
+    var distanceCible = donneesSegment.longueur * fraction;
+    var distances = donneesSegment.distances;
+    for (var i = 1; i < distances.length; i++) {
+      if (distances[i] >= distanceCible) {
+        var longueurMorceau = distances[i] - distances[i - 1];
+        var fractionMorceau = longueurMorceau > 0
+          ? (distanceCible - distances[i - 1]) / longueurMorceau : 0;
+        return sim.indexArrets[segment] + i - 1 + fractionMorceau;
+      }
+    }
+    return sim.indexArrets[segment + 1];
   }
 
   function coordonneeCourante(index) {
@@ -691,7 +711,8 @@
     var annonces = sim.points.filter(function (pt) { return pt.annonce; }).length;
     document.getElementById("sim-compteur").textContent =
       "Arrêt " + (Math.min(Math.floor(sim.pos) + 1, sim.arrets.length)) + " / " + sim.arrets.length +
-      " · " + annonces + " / " + sim.points.length + " alertes annoncées";
+      " · " + annonces + " / " + sim.points.length + " alertes annoncées" +
+      (sim.mult > 1 ? " · temps x" + sim.mult : "");
 
     document.getElementById("sim-vitesse").innerHTML = Math.round(sim.vitesse) + "<small>km/h</small>";
     majAlerte();
@@ -710,15 +731,14 @@
     }
 
     /* roulage */
-    var rythme = 1 / s.duree;                 /* tronçons par ms */
-    if (s.bouchon) rythme = rythme * 0.45;
     var avant = sim.pos;
-    sim.pos += dt * rythme;
-
     var fraction = sim.pos - seg;
     var profil = Math.min(1, Math.sin(Math.PI * fraction) * 1.55);
     var cibleVitesse = Math.max(8, s.vitesseMax * profil);
-    sim.vitesse = sim.vitesse * 0.85 + cibleVitesse * 0.15;
+    var douceur = Math.min(1, dt / 1200);
+    sim.vitesse += (cibleVitesse - sim.vitesse) * douceur;
+    var metresParcourus = (sim.vitesse / 3.6) * (dt / 1000);
+    sim.pos += metresParcourus / Math.max(s.longueur, 1);
 
     /* marquer les alertes entrées dans la zone d'annonce, même si
        l'affichage n'a pas le temps de tourner à ce moment-là */
