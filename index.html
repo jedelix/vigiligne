@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#f5f7fa">
   <title>VigiLine : points de vigilance</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -96,21 +97,26 @@
       <header class="entete barre barre-conduite">
         <button class="btn-retour" data-retour="parcours" aria-label="Quitter la démo">&#8592;</button>
         <div class="barre-titre">
-          <h1>Démo du service : vision future</h1>
-          <p class="sous-titre-barre">Simulation du trajet complet avec ses temps réels : arrêts, feux, circulation. Rien n'est connecté au véhicule.</p>
+          <h1>Guidage de la ligne 48</h1>
+          <p class="sous-titre-barre">Parcours scénarisé, sans GPS ni connexion au véhicule</p>
         </div>
       </header>
 
       <main class="contenu-sim">
-        <div class="sim-statut">
-          <div class="sim-etat" id="sim-etat">Prêt au départ</div>
-          <div class="sim-sous-etat" id="sim-sous-etat"></div>
-          <div class="sim-vitesse" id="sim-vitesse">0 km/h</div>
+        <div class="sim-guidage" id="sim-guidage">
+          <div class="sim-direction" id="sim-direction" aria-hidden="true">↑</div>
+          <div class="sim-guidage-textes">
+            <div class="sim-etat" id="sim-etat">Prêt au départ</div>
+            <div class="sim-sous-etat" id="sim-sous-etat"></div>
+          </div>
+          <div class="sim-vitesse" id="sim-vitesse">0<small>km/h</small></div>
         </div>
 
-        <div class="sim-corps">
-          <div class="sim-thermo" id="sim-thermo">
-            <div class="sim-thermo-inner" id="sim-thermo-inner"></div>
+        <div class="sim-carte-coque">
+          <div id="sim-carte" class="sim-carte" aria-label="Carte du parcours simulé de la ligne 48"></div>
+          <div class="sim-prochain" id="sim-prochain">
+            <span class="sim-prochain-label">Prochain arrêt</span>
+            <strong id="sim-prochain-nom">Gare du Nord</strong>
           </div>
           <div id="sim-zone-alerte" class="sim-zone-alerte"></div>
         </div>
@@ -131,6 +137,8 @@
   </div>
 
   <script src="data/ligne-exemple.js"></script>
+  <script src="data/ligne-48-carte.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

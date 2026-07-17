@@ -275,62 +275,142 @@
     if (pointCourant < LIGNE.points.length - 1) { pointCourant++; remplirConduite(); }
   });
 
-  /* ---------- Écran 5 : démo du service (simulation du trajet) ----------
-     Le bus avance sur un chronomètre : il marque les arrêts, se bloque
-     aux feux, ralentit dans la circulation dense. Rien n'est connecté
-     au véhicule, tout est scénarisé pour rendre le temps réaliste. */
+  /* ---------- Écran 5 : carte scénarisée du trajet ----------
+     Le tracé et les arrêts viennent d'un extrait GTFS conservé localement.
+     Seul le fond OpenStreetMap est chargé en ligne. Aucun GPS n'est utilisé. */
 
-  var sim = null; // état de la simulation en cours (null si aucune)
-  var PORTEE_ANNONCE = 1.1; // distance d'annonce d'une alerte, en tronçons
+  var sim = null;
+  var carte = null;
+  var PORTEE_ANNONCE = 0.8;
+  var POINTS_ARRETS = [0, 2, 3, 5, 10, 11, 14, 15, 20, 22, 26];
 
   function hasard(min, max) { return min + Math.random() * (max - min); }
 
-  function preparerSimulation() {
-    var arrets = LIGNE.arrets;
-    var nbSeg = arrets.length - 1;
+  function radians(valeur) { return valeur * Math.PI / 180; }
 
-    /* scénario du trajet, tiré au sort à chaque lancement */
+  function distanceMetres(a, b) {
+    var rayon = 6371000;
+    var dLat = radians(b[0] - a[0]);
+    var dLon = radians(b[1] - a[1]);
+    var lat1 = radians(a[0]);
+    var lat2 = radians(b[0]);
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * rayon * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
+  function cap(a, b) {
+    var lat1 = radians(a[0]);
+    var lat2 = radians(b[0]);
+    var dLon = radians(b[1] - a[1]);
+    var y = Math.sin(dLon) * Math.cos(lat2);
+    var x = Math.cos(lat1) * Math.sin(lat2) -
+      Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  }
+
+  function differenceCap(depart, arrivee) {
+    return ((arrivee - depart + 540) % 360) - 180;
+  }
+
+  function indexFormeLePlusProche(coord, minimum) {
+    var meilleur = minimum || 0;
+    var distance = Infinity;
+    for (var i = meilleur; i < TRAJET_48.coordinates.length; i++) {
+      var d = distanceMetres(coord, TRAJET_48.coordinates[i]);
+      if (d < distance) {
+        distance = d;
+        meilleur = i;
+      }
+    }
+    return meilleur;
+  }
+
+  function longueurForme(debut, fin) {
+    var total = 0;
+    for (var i = Math.floor(debut) + 1; i <= Math.floor(fin); i++) {
+      total += distanceMetres(TRAJET_48.coordinates[i - 1], TRAJET_48.coordinates[i]);
+    }
+    return total;
+  }
+
+  function construireManoeuvres() {
+    var manoeuvres = [];
+    var dernierIndex = 0;
+    for (var i = 4; i < TRAJET_48.coordinates.length - 4; i++) {
+      var avant = cap(TRAJET_48.coordinates[i - 4], TRAJET_48.coordinates[i]);
+      var apres = cap(TRAJET_48.coordinates[i], TRAJET_48.coordinates[i + 4]);
+      var difference = differenceCap(avant, apres);
+      if (Math.abs(difference) >= 42 && longueurForme(dernierIndex, i) >= 140) {
+        manoeuvres.push({
+          index: i,
+          direction: difference < 0 ? "gauche" : "droite",
+          symbole: difference < 0 ? "↰" : "↱"
+        });
+        dernierIndex = i;
+      }
+    }
+    return manoeuvres;
+  }
+
+  function preparerSimulation() {
+    var arrets = TRAJET_48.stops;
+    var indexArrets = [];
+    var minimum = 0;
+    arrets.forEach(function (arret) {
+      var index = indexFormeLePlusProche([arret.lat, arret.lon], minimum);
+      indexArrets.push(index);
+      minimum = index;
+    });
+
     var segments = [];
-    for (var i = 0; i < nbSeg; i++) {
+    for (var i = 0; i < arrets.length - 1; i++) {
+      var debut = indexArrets[i];
+      var fin = indexArrets[i + 1];
+      var longueur = longueurForme(debut, fin);
+      var direct = distanceMetres(TRAJET_48.coordinates[debut], TRAJET_48.coordinates[fin]);
+      var rectitude = longueur ? direct / longueur : 0;
+      var vitesseMax = longueur > 260 && rectitude > 0.82 ? 50 :
+        longueur > 190 && rectitude > 0.72 ? 44 :
+          longueur < 120 ? 28 : 36;
+      var dense = Math.random() < 0.14;
       segments.push({
-        duree: hasard(11000, 16500),             /* ms de roulage sur le tronçon */
-        bouchon: Math.random() < 0.16,           /* circulation dense sur ce tronçon */
-        feu: Math.random() < 0.30 ? {            /* un feu tricolore en cours de tronçon */
-          position: hasard(0.3, 0.7),
-          duree: hasard(8000, 15000),
+        duree: hasard(9000, 14500),
+        bouchon: dense,
+        vitesseMax: dense ? Math.min(vitesseMax, 18) : vitesseMax,
+        feu: Math.random() < 0.24 ? {
+          position: hasard(0.35, 0.72),
+          duree: hasard(6000, 11000),
           fait: false
         } : null
       });
     }
 
-    /* à quels arrêts le bus marque-t-il l'arrêt (voyageurs) */
     var dessertes = {};
     for (var j = 1; j < arrets.length; j++) {
       dessertes[j] = (j === arrets.length - 1) || Math.random() < 0.72
-        ? hasard(6000, 10000) : 0;
+        ? hasard(5000, 9000) : 0;
     }
 
-    /* position de chaque point de vigilance sur la piste */
     var points = LIGNE.points.slice().sort(function (a, b) { return a.ordre - b.ordre; })
-      .map(function (p) {
-        var idx = arrets.indexOf(p.arretRepere);
-        if (idx < 0) idx = 0;
-        var posPoint;
-        if (idx === 0) posPoint = 0.3;
-        else if (idx === arrets.length - 1) posPoint = idx - 0.5;
-        else posPoint = idx - 0.35;
-        return { donnees: p, position: posPoint, annonce: false };
+      .map(function (p, pointIndex) {
+        var arretIndex = POINTS_ARRETS[pointIndex];
+        var position = arretIndex === 0 ? 0.3 :
+          arretIndex === arrets.length - 1 ? arretIndex - 0.5 : arretIndex - 0.3;
+        return { donnees: p, position: position, annonce: false, arretIndex: arretIndex };
       });
 
     return {
       arrets: arrets,
-      nbSeg: nbSeg,
+      nbSeg: arrets.length - 1,
+      indexArrets: indexArrets,
       segments: segments,
       dessertes: dessertes,
       points: points,
+      manoeuvres: construireManoeuvres(),
       pos: 0,
-      etat: "arret",              /* on démarre à quai au terminus de départ */
-      attente: 5000,
+      etat: "arret",
+      attente: 4000,
       mult: 1,
       enPause: false,
       vitesse: 0,
@@ -340,67 +420,80 @@
     };
   }
 
-  /* espacement vertical entre deux arrêts du thermomètre, en pixels */
-  var THERMO_ESPACEMENT = 46;
-  var THERMO_MARGE = 26;
-
-  function yArret(position) { return THERMO_MARGE + position * THERMO_ESPACEMENT; }
-
-  function construireThermometre() {
-    var inner = document.getElementById("sim-thermo-inner");
-    var hauteurTotale = yArret(sim.nbSeg) + THERMO_MARGE;
-
-    var html =
-      '<div class="sim-thermo-ligne" style="top:' + yArret(0) + 'px;height:' + (sim.nbSeg * THERMO_ESPACEMENT) + 'px"></div>' +
-      '<div class="sim-thermo-fait" id="sim-thermo-fait" style="top:' + yArret(0) + 'px;height:0px"></div>';
-
-    for (var i = 0; i < sim.arrets.length; i++) {
-      html +=
-        '<div class="sim-thermo-arret" data-index="' + i + '" style="top:' + yArret(i) + 'px">' +
-        '<span class="sim-thermo-dot"></span>' +
-        '<span class="sim-thermo-nom">' + sim.arrets[i] + "</span>" +
-        "</div>";
-    }
-
-    sim.points.forEach(function (pt) {
-      html += '<span class="sim-thermo-point niveau-' + pt.donnees.niveau +
-        '" style="top:' + yArret(pt.position) + 'px"></span>';
-    });
-
-    html += '<span class="sim-bus" id="sim-bus" style="top:' + yArret(0) + 'px">' +
-      '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="15" rx="3" fill="#fff"/>' +
-      '<rect x="7" y="6" width="10" height="5" rx="1" fill="#2f80ed"/>' +
-      '<circle cx="8.5" cy="15" r="1.6" fill="#2f80ed"/><circle cx="15.5" cy="15" r="1.6" fill="#2f80ed"/></svg>' +
-      "</span>";
-
-    inner.innerHTML = html;
-    inner.style.height = hauteurTotale + "px";
+  function indexFormeCourant() {
+    if (sim.pos >= sim.nbSeg) return sim.indexArrets[sim.nbSeg];
+    var segment = Math.max(0, Math.min(Math.floor(sim.pos), sim.nbSeg - 1));
+    var fraction = sim.pos - segment;
+    return sim.indexArrets[segment] +
+      (sim.indexArrets[segment + 1] - sim.indexArrets[segment]) * fraction;
   }
 
-  /* fait suivre la fenêtre du thermomètre autour du bus, comme
-     l'écran de bord qui fait défiler les prochains arrêts */
-  function majThermometre() {
-    var conteneur = document.getElementById("sim-thermo");
-    var inner = document.getElementById("sim-thermo-inner");
-    var yBus = yArret(sim.pos);
+  function coordonneeCourante(index) {
+    var debut = Math.floor(index);
+    var fin = Math.min(Math.ceil(index), TRAJET_48.coordinates.length - 1);
+    var fraction = index - debut;
+    var a = TRAJET_48.coordinates[debut];
+    var b = TRAJET_48.coordinates[fin];
+    return [a[0] + (b[0] - a[0]) * fraction, a[1] + (b[1] - a[1]) * fraction];
+  }
 
-    document.getElementById("sim-thermo-fait").style.height = (sim.pos * THERMO_ESPACEMENT) + "px";
-    document.getElementById("sim-bus").style.top = yBus + "px";
-
-    var hVue = conteneur.clientHeight;
-    var hTotale = yArret(sim.nbSeg) + THERMO_MARGE;
-    var decalage = 0;
-    if (hTotale > hVue) {
-      decalage = Math.min(0, Math.max(hVue - hTotale, hVue / 2 - yBus));
+  function initialiserCarte() {
+    var conteneur = document.getElementById("sim-carte");
+    conteneur.innerHTML = "";
+    if (carte) {
+      carte.remove();
+      carte = null;
     }
-    inner.style.transform = "translateY(" + decalage + "px)";
+    if (typeof L === "undefined") {
+      conteneur.innerHTML = '<div class="sim-carte-erreur">Le fond de carte n\'a pas pu être chargé. Vérifiez la connexion Internet.</div>';
+      return;
+    }
 
-    var prochainIdx = Math.min(Math.ceil(sim.pos + 0.001), sim.arrets.length - 1);
-    inner.querySelectorAll(".sim-thermo-arret").forEach(function (el) {
-      var idx = parseInt(el.getAttribute("data-index"), 10);
-      el.classList.toggle("passe", idx <= sim.pos + 0.001);
-      el.classList.toggle("prochain", idx === prochainIdx && sim.etat !== "fini");
+    carte = L.map("sim-carte", { zoomControl: false, attributionControl: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(carte);
+
+    sim.lignePassee = L.polyline([], { color: "#7d8796", weight: 8, opacity: 0.65 }).addTo(carte);
+    sim.ligneRestante = L.polyline(TRAJET_48.coordinates, {
+      color: "#7657ff", weight: 9, opacity: 0.92
+    }).addTo(carte);
+
+    sim.marqueursArrets = sim.arrets.map(function (arret, index) {
+      return L.circleMarker([arret.lat, arret.lon], {
+        radius: index === 0 || index === sim.arrets.length - 1 ? 6 : 4,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: "#7657ff",
+        fillOpacity: 1
+      }).bindTooltip(arret.nom).addTo(carte);
     });
+
+    sim.points.forEach(function (point) {
+      var couleur = NIVEAUX[point.donnees.niveau].couleur;
+      var index = sim.indexArrets[point.arretIndex];
+      L.circleMarker(TRAJET_48.coordinates[index], {
+        radius: 7,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: couleur,
+        fillOpacity: 1
+      }).bindTooltip(point.donnees.nom).addTo(carte);
+    });
+
+    sim.marqueurBus = L.marker(TRAJET_48.coordinates[0], {
+      icon: L.divIcon({
+        className: "sim-bus-carte",
+        html: '<span aria-label="Bus">48</span>',
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
+      }),
+      interactive: false
+    }).addTo(carte);
+
+    carte.setView(TRAJET_48.coordinates[0], 16);
+    setTimeout(function () { if (carte) carte.invalidateSize(); }, 0);
   }
 
   function majStatut(titre, sousTitre) {
@@ -410,6 +503,7 @@
 
   function majAlerte() {
     var zone = document.getElementById("sim-zone-alerte");
+    var coque = document.querySelector(".sim-carte-coque");
     var portee = PORTEE_ANNONCE;
 
     var actif = null;
@@ -419,14 +513,16 @@
     }
 
     if (!actif) {
+      coque.classList.remove("alerte-active");
       if (sim.alerteAffichee !== "neutre") {
-        zone.innerHTML = '<div class="sim-neutre">Aucun point de vigilance à l\'approche</div>';
+        zone.innerHTML = "";
         sim.alerteAffichee = "neutre";
       }
       return;
     }
 
     var p = actif.donnees;
+    coque.classList.add("alerte-active");
     var niveau = NIVEAUX[p.niveau];
     var type = TYPES[p.type];
     actif.annonce = true;
@@ -435,9 +531,10 @@
       zone.innerHTML =
         '<div class="sim-alerte fond-' + p.niveau + '">' +
         '<div class="sim-alerte-icone">' + icone(p.type, niveau.couleur) + "</div>" +
+        '<div class="sim-alerte-textes">' +
         '<div class="sim-alerte-message" id="sim-alerte-message"></div>' +
         '<div class="sim-alerte-nom">' + p.nom + "</div>" +
-        '<span class="sim-alerte-niveau niveau-' + p.niveau + '">' + niveau.libelle + "</span>" +
+        "</div>" +
         "</div>";
       sim.alerteAffichee = p.id;
     }
@@ -451,14 +548,57 @@
   }
 
   function majAffichage() {
-    majThermometre();
+    var indexRoute = indexFormeCourant();
+    var indexEntier = Math.floor(indexRoute);
+    var coordonnee = coordonneeCourante(indexRoute);
+
+    if (carte) {
+      var passe = TRAJET_48.coordinates.slice(0, indexEntier + 1).concat([coordonnee]);
+      var reste = [coordonnee].concat(TRAJET_48.coordinates.slice(indexEntier + 1));
+      sim.lignePassee.setLatLngs(passe);
+      sim.ligneRestante.setLatLngs(reste);
+      sim.marqueurBus.setLatLng(coordonnee);
+      carte.panTo(coordonnee, { animate: false });
+
+      var prochain = Math.min(Math.ceil(sim.pos + 0.001), sim.arrets.length - 1);
+      sim.marqueursArrets.forEach(function (marqueur, index) {
+        marqueur.setStyle({
+          fillColor: index < prochain ? "#7d8796" : index === prochain ? "#ffffff" : "#7657ff",
+          color: index === prochain ? "#7657ff" : "#ffffff",
+          radius: index === prochain ? 7 : (index === 0 || index === sim.arrets.length - 1 ? 6 : 4)
+        });
+      });
+    }
+
+    var prochainIdx = Math.min(Math.ceil(sim.pos + 0.001), sim.arrets.length - 1);
+    document.getElementById("sim-prochain-nom").textContent = sim.arrets[prochainIdx].nom;
+
+    var prochaineManoeuvre = null;
+    for (var m = 0; m < sim.manoeuvres.length; m++) {
+      if (sim.manoeuvres[m].index > indexRoute + 2) {
+        prochaineManoeuvre = sim.manoeuvres[m];
+        break;
+      }
+    }
+    var direction = document.getElementById("sim-direction");
+    if (prochaineManoeuvre) {
+      var distanceVirage = longueurForme(indexRoute, prochaineManoeuvre.index);
+      direction.textContent = prochaineManoeuvre.symbole;
+      if (sim.etat === "roulage") {
+        var distanceTexte = distanceVirage < 40 ? "Maintenant" : "Dans " + (Math.ceil(distanceVirage / 10) * 10) + " m";
+        majStatut(distanceTexte + ", tournez à " + prochaineManoeuvre.direction,
+          "Puis continuez vers " + sim.arrets[prochainIdx].nom);
+      }
+    } else {
+      direction.textContent = "↑";
+    }
 
     var annonces = sim.points.filter(function (pt) { return pt.annonce; }).length;
     document.getElementById("sim-compteur").textContent =
       "Arrêt " + (Math.min(Math.floor(sim.pos) + 1, sim.arrets.length)) + " / " + sim.arrets.length +
       " · " + annonces + " / " + sim.points.length + " alertes annoncées";
 
-    document.getElementById("sim-vitesse").textContent = Math.round(sim.vitesse) + " km/h";
+    document.getElementById("sim-vitesse").innerHTML = Math.round(sim.vitesse) + "<small>km/h</small>";
     majAlerte();
   }
 
@@ -480,7 +620,9 @@
     var avant = sim.pos;
     sim.pos += dt * rythme;
 
-    var cibleVitesse = s.bouchon ? hasard(7, 13) : hasard(17, 31);
+    var fraction = sim.pos - seg;
+    var profil = Math.min(1, Math.sin(Math.PI * fraction) * 1.55);
+    var cibleVitesse = Math.max(8, s.vitesseMax * profil);
     sim.vitesse = sim.vitesse * 0.85 + cibleVitesse * 0.15;
 
     /* marquer les alertes entrées dans la zone d'annonce, même si
@@ -516,18 +658,18 @@
 
   function majTextesStatut() {
     if (sim.etat === "fini") {
-      majStatut("Terminus : " + sim.arrets[sim.arrets.length - 1],
+      majStatut("Terminus : " + sim.arrets[sim.arrets.length - 1].nom,
         "Service terminé, toutes les alertes de la ligne ont été annoncées");
       document.getElementById("sim-pause").textContent = "Rejouer";
     } else if (sim.etat === "roulage") {
       var seg = Math.min(Math.floor(sim.pos), sim.nbSeg - 1);
       var versIdx = Math.min(seg + 1, sim.arrets.length - 1);
-      majStatut("En direction de : " + sim.arrets[versIdx],
+      majStatut("Suivez le tracé vers " + sim.arrets[versIdx].nom,
         sim.segments[seg].bouchon ? "Circulation dense, allure réduite" : "");
     } else if (sim.etat === "feu") {
       majStatut("Arrêté au feu tricolore", "Redémarrage dans un instant");
     } else if (sim.etat === "arret") {
-      majStatut("Arrêt : " + sim.arrets[Math.round(sim.pos)],
+      majStatut("Arrêt : " + sim.arrets[Math.round(sim.pos)].nom,
         "Montée et descente des voyageurs");
     }
   }
@@ -555,7 +697,7 @@
   function demarrerSimulation() {
     arreterSimulation();
     sim = preparerSimulation();
-    construireThermometre();
+    initialiserCarte();
     majStatut("Départ : " + LIGNE.depart, "Prise de service, fermeture des portes");
     document.getElementById("sim-pause").textContent = "Pause";
     document.querySelectorAll(".btn-vitesse").forEach(function (b) {

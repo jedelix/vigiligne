@@ -807,3 +807,226 @@ body {
   border-color: var(--accent);
   color: #fff;
 }
+
+/* ---------- Carte de guidage scénarisée ---------- */
+
+#vue-simulation {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.contenu-sim {
+  min-height: 0;
+  gap: 10px;
+  padding: 12px 12px 10px;
+}
+
+.sim-guidage {
+  flex: none;
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #7657ff;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(31, 20, 96, 0.28);
+}
+
+.sim-direction {
+  flex: none;
+  width: 50px;
+  text-align: center;
+  font-size: 2.65rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.sim-guidage-textes {
+  flex: 1;
+  min-width: 0;
+}
+
+.sim-guidage .sim-etat {
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.sim-guidage .sim-sous-etat {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  min-height: 0;
+  margin-top: 4px;
+}
+
+.sim-guidage .sim-vitesse {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  margin: 0;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #172033;
+  background: #fff;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.sim-vitesse small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.52rem;
+  font-weight: 800;
+}
+
+.sim-carte-coque {
+  position: relative;
+  flex: 1;
+  min-height: 330px;
+  overflow: hidden;
+  border: 1px solid var(--bordure);
+  border-radius: 18px;
+  background: #d9dee7;
+}
+
+.sim-carte {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.sim-carte-erreur {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #172033;
+  text-align: center;
+  font-weight: 700;
+}
+
+.sim-prochain {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 500;
+  padding: 10px 14px;
+  border-radius: 13px;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(19, 27, 41, 0.2);
+  transition: opacity 0.15s ease;
+}
+
+.sim-prochain-label {
+  display: block;
+  margin-bottom: 2px;
+  color: #657087;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.sim-prochain strong {
+  display: block;
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sim-zone-alerte {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 510;
+  display: block;
+  pointer-events: none;
+}
+
+.sim-carte-coque.alerte-active .sim-prochain { opacity: 0; }
+
+.sim-zone-alerte .sim-alerte {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-width: 3px;
+  color: #172033;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 4px 18px rgba(19, 27, 41, 0.26);
+}
+
+.sim-zone-alerte .sim-alerte-icone {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+}
+
+.sim-zone-alerte .sim-alerte-icone svg {
+  width: 44px;
+  height: 44px;
+}
+
+.sim-alerte-textes { min-width: 0; }
+
+.sim-zone-alerte .sim-alerte-message {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.sim-zone-alerte .sim-alerte-nom {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #657087;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sim-bus-carte {
+  border: 0;
+  background: transparent;
+}
+
+.sim-bus-carte span {
+  width: 38px;
+  height: 38px;
+  border: 4px solid #fff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #2f80ed;
+  box-shadow: 0 3px 12px rgba(20, 38, 69, 0.45);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.leaflet-control-attribution {
+  font-size: 9px;
+}
+
+@media (max-height: 700px) {
+  .sim-guidage { min-height: 68px; padding: 8px 10px; }
+  .sim-direction { width: 42px; font-size: 2.2rem; }
+  .sim-guidage .sim-vitesse { width: 48px; height: 48px; }
+  .sim-carte-coque { min-height: 260px; }
+  .sim-compteur { display: none; }
+}
