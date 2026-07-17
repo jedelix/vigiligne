@@ -92,7 +92,8 @@
     parcours: document.getElementById("vue-parcours"),
     fiche: document.getElementById("vue-fiche"),
     conduite: document.getElementById("vue-conduite"),
-    simulation: document.getElementById("vue-simulation")
+    simulation: document.getElementById("vue-simulation"),
+    reperage: document.getElementById("vue-reperage")
   };
 
   var pointCourant = 0; // index dans LIGNE.points
@@ -134,11 +135,22 @@
       '<span class="carte-ligne-resume">' + resume + "</span>" +
       '</span>' +
       '<span class="chevron">&#8250;</span>' +
-      '</button>';
+      '</button>' +
+      '<button class="carte-ligne" id="btn-ligne-171">' +
+      '<span class="badge-ligne badge-ligne-171">171</span>' +
+      '<span class="carte-ligne-infos">' +
+      '<span class="carte-ligne-trajet">Pont de Sèvres &#8596; Château de Versailles</span>' +
+      '<span class="carte-ligne-meta">Repérage terrain · points à compléter par Laetitia</span>' +
+      '</span><span class="chevron">&#8250;</span></button>';
 
     document.getElementById("btn-ligne").addEventListener("click", function () {
       remplirParcours();
       afficher("parcours");
+    });
+    document.getElementById("btn-ligne-171").addEventListener("click", function () {
+      remplirArrets171();
+      afficherObservations();
+      afficher("reperage");
     });
   }
 
@@ -537,7 +549,7 @@
       var bus = document.createElement("div");
       bus.className = "sim-bus-carte";
       bus.setAttribute("aria-label", "Bus ligne 48");
-      bus.innerHTML = '<span><b>▲</b><em>48</em></span>';
+      bus.textContent = "48";
       sim.marqueurBus = new maplibregl.Marker({
         element: bus,
         anchor: "center",
@@ -842,6 +854,103 @@
         b.classList.toggle("actif", b === btn);
       });
     });
+  });
+
+  /* ---------- Repérage terrain de la ligne 171 ---------- */
+
+  var CLE_OBSERVATIONS_171 = "vigiligne_observations_171_v1";
+
+  function echapper(texte) {
+    return String(texte).replace(/[&<>"']/g, function (caractere) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[caractere];
+    });
+  }
+
+  function lireObservations() {
+    try {
+      var valeur = localStorage.getItem(CLE_OBSERVATIONS_171);
+      return valeur ? JSON.parse(valeur) : [];
+    } catch (erreur) {
+      return [];
+    }
+  }
+
+  function sauverObservations(observations) {
+    try {
+      localStorage.setItem(CLE_OBSERVATIONS_171, JSON.stringify(observations));
+      return true;
+    } catch (erreur) {
+      return false;
+    }
+  }
+
+  function remplirArrets171() {
+    var sens = document.getElementById("obs-sens").value;
+    var arrets = LIGNE_171.arrets.slice();
+    if (sens.indexOf("Château de Versailles →") === 0) arrets.reverse();
+    document.getElementById("obs-arret").innerHTML = arrets.map(function (nom, index) {
+      return '<option value="' + echapper(nom) + '">' + (index + 1) + ". " + echapper(nom) + "</option>";
+    }).join("");
+  }
+
+  function afficherObservations() {
+    var observations = lireObservations();
+    document.getElementById("obs-total").textContent = observations.length;
+    document.getElementById("btn-export-obs").disabled = observations.length === 0;
+    var liste = document.getElementById("liste-observations");
+    if (!observations.length) {
+      liste.innerHTML = '<p class="observation-vide">Aucun point enregistré pour le moment. Les observations resteront sur ce téléphone jusqu’à leur export.</p>';
+      return;
+    }
+    liste.innerHTML = observations.slice().reverse().map(function (observation) {
+      return '<article class="observation-carte ' + echapper(observation.niveau) + '">' +
+        '<strong>' + echapper(observation.type) + " · après " + echapper(observation.arret) + "</strong>" +
+        '<span>' + echapper(observation.description) + "</span>" +
+        '<span>' + echapper(observation.sens) + " · " + echapper(observation.dateLisible) +
+        (observation.temporaire ? " · temporaire" : "") + "</span></article>";
+    }).join("");
+  }
+
+  document.getElementById("obs-sens").addEventListener("change", remplirArrets171);
+
+  document.getElementById("form-reperage").addEventListener("submit", function (evenement) {
+    evenement.preventDefault();
+    var observations = lireObservations();
+    var maintenant = new Date();
+    observations.push({
+      id: "obs-" + maintenant.getTime(),
+      ligne: "171",
+      sens: document.getElementById("obs-sens").value,
+      arret: document.getElementById("obs-arret").value,
+      type: document.getElementById("obs-type").value,
+      niveau: document.getElementById("obs-niveau").value,
+      description: document.getElementById("obs-description").value.trim(),
+      temporaire: document.getElementById("obs-temporaire").checked,
+      dateISO: maintenant.toISOString(),
+      dateLisible: maintenant.toLocaleString("fr-FR")
+    });
+    var message = document.getElementById("obs-message");
+    if (!sauverObservations(observations)) {
+      message.textContent = "Impossible d’enregistrer sur ce téléphone. Faites une capture de votre note.";
+      return;
+    }
+    document.getElementById("obs-description").value = "";
+    document.getElementById("obs-temporaire").checked = false;
+    message.textContent = "Point enregistré sur ce téléphone.";
+    afficherObservations();
+  });
+
+  document.getElementById("btn-export-obs").addEventListener("click", function () {
+    var observations = lireObservations();
+    if (!observations.length) return;
+    var contenu = JSON.stringify({ ligne: "171", exporteLe: new Date().toISOString(), observations: observations }, null, 2);
+    var lien = document.createElement("a");
+    lien.href = URL.createObjectURL(new Blob([contenu], { type: "application/json;charset=utf-8" }));
+    lien.download = "vigiligne-171-observations-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(lien);
+    lien.click();
+    document.body.removeChild(lien);
+    setTimeout(function () { URL.revokeObjectURL(lien.href); }, 1000);
   });
 
   /* ---------- Démarrage ---------- */
