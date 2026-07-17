@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7fa">
+  <title>VigiLine : points de vigilance</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="app" class="app">
+
+    <!-- ============ ÉCRAN 1 : ACCUEIL / CHOIX DU TRAJET ============ -->
+    <section id="vue-accueil" class="vue">
+      <header class="entete entete-accueil">
+        <div class="logo-app" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="56" height="56">
+            <rect x="8" y="6" width="32" height="30" rx="5" fill="#2f80ed"/>
+            <rect x="12" y="11" width="24" height="10" rx="2" fill="#cfe3ff"/>
+            <circle cx="16" cy="30" r="3" fill="#10151d"/>
+            <circle cx="32" cy="30" r="3" fill="#10151d"/>
+            <rect x="14" y="38" width="4" height="4" rx="1" fill="#2f80ed"/>
+            <rect x="30" y="38" width="4" height="4" rx="1" fill="#2f80ed"/>
+          </svg>
+        </div>
+        <h1>VigiLine</h1>
+        <p class="sous-titre">Préparer sa ligne avant de la conduire : connaître les points de vigilance pour les anticiper au lieu de les découvrir en roulant</p>
+      </header>
+
+      <main class="contenu">
+        <h2 class="titre-section">Choisir son trajet</h2>
+        <div id="liste-lignes"></div>
+        <p class="note-proto">Prototype de démonstration : un outil de préparation à consulter avant la prise de service. Une seule ligne d'exemple est disponible, le parcours est réel mais les points de vigilance sont des données de test.</p>
+      </main>
+    </section>
+
+    <!-- ============ ÉCRAN 2 : PARCOURS ANNOTÉ ============ -->
+    <section id="vue-parcours" class="vue" hidden>
+      <header class="entete barre">
+        <button class="btn-retour" data-retour="accueil" aria-label="Retour à l'accueil">&#8592;</button>
+        <div class="barre-titre">
+          <h1 id="parcours-titre"></h1>
+          <p id="parcours-direction" class="sous-titre-barre"></p>
+        </div>
+      </header>
+
+      <main class="contenu">
+        <div class="legende" aria-label="Légende des niveaux d'attention">
+          <span class="pastille niveau-standard">Standard</span>
+          <span class="pastille niveau-renforcee">Renforcée</span>
+          <span class="pastille niveau-critique">Critique</span>
+        </div>
+        <ol id="liste-points" class="parcours"></ol>
+        <button class="btn-conduite" id="btn-simulation">&#9654; Démo : simuler le service complet</button>
+      </main>
+    </section>
+
+    <!-- ============ ÉCRAN 3 : FICHE POINT DE VIGILANCE ============ -->
+    <section id="vue-fiche" class="vue" hidden>
+      <header class="entete barre">
+        <button class="btn-retour" data-retour="parcours" aria-label="Retour au parcours">&#8592;</button>
+        <div class="barre-titre">
+          <h1>Point de vigilance</h1>
+          <p id="fiche-position" class="sous-titre-barre"></p>
+        </div>
+      </header>
+
+      <main class="contenu" id="fiche-contenu"></main>
+    </section>
+
+    <!-- ============ ÉCRAN 4 : VISION FUTURE (ALERTE EMBARQUÉE) ============ -->
+    <section id="vue-conduite" class="vue vue-conduite vue-sombre" hidden>
+      <header class="entete barre barre-conduite">
+        <button class="btn-retour" data-retour="fiche" aria-label="Quitter la vision future">&#8592;</button>
+        <div class="barre-titre">
+          <h1>Vision future : alerte embarquée</h1>
+          <p class="sous-titre-barre">Simulation statique. Cette assistance en conduite n'existe pas encore, elle demanderait l'accord de l'opérateur et une validation sécurité.</p>
+        </div>
+      </header>
+
+      <main class="contenu-conduite" id="conduite-contenu"></main>
+
+      <footer class="conduite-navigation">
+        <button id="conduite-prec" class="btn-nav">&#8592; Précédent</button>
+        <span id="conduite-compteur" class="conduite-compteur"></span>
+        <button id="conduite-suiv" class="btn-nav">Suivant &#8594;</button>
+      </footer>
+    </section>
+
+    <!-- ============ ÉCRAN 5 : DÉMO DU SERVICE (SIMULATION DU TRAJET) ============ -->
+    <section id="vue-simulation" class="vue vue-sombre" hidden>
+      <header class="entete barre barre-conduite">
+        <button class="btn-retour" data-retour="parcours" aria-label="Quitter la démo">&#8592;</button>
+        <div class="barre-titre">
+          <h1>Démo du service : vision future</h1>
+          <p class="sous-titre-barre">Simulation du trajet complet avec ses temps réels : arrêts, feux, circulation. Rien n'est connecté au véhicule.</p>
+        </div>
+      </header>
+
+      <main class="contenu-sim">
+        <div class="sim-statut">
+          <div class="sim-etat" id="sim-etat">Prêt au départ</div>
+          <div class="sim-sous-etat" id="sim-sous-etat"></div>
+          <div class="sim-vitesse" id="sim-vitesse">0 km/h</div>
+        </div>
+
+        <div class="sim-corps">
+          <div class="sim-thermo" id="sim-thermo">
+            <div class="sim-thermo-inner" id="sim-thermo-inner"></div>
+          </div>
+          <div id="sim-zone-alerte" class="sim-zone-alerte"></div>
+        </div>
+
+        <div class="sim-compteur" id="sim-compteur"></div>
+      </main>
+
+      <footer class="conduite-navigation">
+        <button id="sim-pause" class="btn-nav">Pause</button>
+        <div class="sim-vitesses">
+          <button class="btn-nav btn-vitesse actif" data-mult="1">x1</button>
+          <button class="btn-nav btn-vitesse" data-mult="2">x2</button>
+          <button class="btn-nav btn-vitesse" data-mult="8">Express</button>
+        </div>
+      </footer>
+    </section>
+
+  </div>
+
+  <script src="data/ligne-exemple.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

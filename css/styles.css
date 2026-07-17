@@ -1,0 +1,791 @@
+/* ============================================================
+   VigiLine : styles
+   Direction visuelle : sobre, très lisible, gros caractères,
+   pensé pour un coup d'oeil rapide.
+   Thème clair pour l'outil de préparation ; seul l'écran
+   "Vision future" reste sombre car il simule l'écran embarqué.
+   ============================================================ */
+
+:root {
+  --fond: #f5f7fa;
+  --fond-carte: #ffffff;
+  --fond-carte-hover: #edf1f7;
+  --bordure: #d9e1ec;
+  --texte: #1b2430;
+  --texte-secondaire: #5d6b7e;
+  --accent: #2f80ed;
+
+  /* couleur de texte des niveaux (contraste sur fond clair) */
+  --standard: #8f6a00;
+  --renforcee: #b35309;
+  --critique: #c02b22;
+
+  /* couleur vive des niveaux (bordures, icônes) */
+  --standard-vif: #e6a817;
+  --renforcee-vif: #f2801f;
+  --critique-vif: #e8453a;
+
+  /* fonds pastel des niveaux */
+  --standard-fond: #faf0cf;
+  --renforcee-fond: #fde6d0;
+  --critique-fond: #fadbd8;
+
+  --rayon: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 17px; }
+
+body {
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #e7ebf2;
+  color: var(--texte);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--fond);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 24px rgba(27, 36, 48, 0.08);
+}
+
+.vue {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.vue[hidden] { display: none; }
+
+/* ---------- En-têtes ---------- */
+
+.entete-accueil {
+  text-align: center;
+  padding: 48px 24px 8px;
+}
+
+.entete-accueil h1 {
+  font-size: 2rem;
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+}
+
+.sous-titre {
+  color: var(--texte-secondaire);
+  font-size: 1rem;
+  margin-top: 8px;
+  line-height: 1.45;
+}
+
+.barre {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--fond-carte);
+  border-bottom: 1px solid var(--bordure);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.barre h1 { font-size: 1.15rem; }
+
+.sous-titre-barre {
+  color: var(--texte-secondaire);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.btn-retour {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--bordure);
+  background: var(--fond);
+  color: var(--texte);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.btn-retour:active { background: var(--fond-carte-hover); }
+
+/* ---------- Contenu commun ---------- */
+
+.contenu {
+  flex: 1;
+  padding: 20px 16px 32px;
+}
+
+.titre-section {
+  font-size: 1.05rem;
+  color: var(--texte-secondaire);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.note-proto {
+  color: var(--texte-secondaire);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-top: 24px;
+  padding: 12px 14px;
+  border: 1px dashed var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--fond-carte);
+}
+
+/* ---------- Écran 1 : carte de ligne ---------- */
+
+.carte-ligne {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: left;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 18px 16px;
+  color: var(--texte);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(27, 36, 48, 0.06);
+}
+
+.carte-ligne:active { background: var(--fond-carte-hover); }
+
+.badge-ligne {
+  flex: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.carte-ligne-infos { flex: 1; }
+
+.carte-ligne-trajet {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.carte-ligne-meta {
+  display: block;
+  color: var(--texte-secondaire);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.carte-ligne-resume {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.mini-pastille {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.chevron {
+  flex: none;
+  color: var(--texte-secondaire);
+  font-size: 1.4rem;
+}
+
+/* ---------- Légende niveaux ---------- */
+
+.legende {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.pastille {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.niveau-standard { background: var(--standard-fond); color: var(--standard); }
+.niveau-renforcee { background: var(--renforcee-fond); color: var(--renforcee); }
+.niveau-critique { background: var(--critique-fond); color: var(--critique); }
+
+/* ---------- Écran 2 : parcours annoté ---------- */
+
+.parcours {
+  list-style: none;
+  position: relative;
+}
+
+/* la ligne verticale du trajet */
+.parcours::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--bordure);
+  border-radius: 2px;
+}
+
+.point-item { position: relative; padding: 0 0 14px 0; }
+
+.carte-point {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-left-width: 6px;
+  border-radius: var(--rayon);
+  padding: 14px;
+  margin-left: 44px;
+  width: calc(100% - 44px);
+  color: var(--texte);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(27, 36, 48, 0.06);
+}
+
+.carte-point:active { background: var(--fond-carte-hover); }
+
+.carte-point.bord-standard { border-left-color: var(--standard-vif); }
+.carte-point.bord-renforcee { border-left-color: var(--renforcee-vif); }
+.carte-point.bord-critique { border-left-color: var(--critique-vif); }
+
+.point-ordre {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(calc(-50% - 7px));
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--fond-carte);
+  border: 2px solid var(--bordure);
+  color: var(--texte-secondaire);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.point-icone {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.point-icone svg { width: 32px; height: 32px; }
+
+.icone-standard { background: var(--standard-fond); }
+.icone-renforcee { background: var(--renforcee-fond); }
+.icone-critique { background: var(--critique-fond); }
+
+.point-textes { flex: 1; min-width: 0; }
+
+.point-nom {
+  display: block;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.point-type {
+  display: block;
+  color: var(--texte-secondaire);
+  font-size: 0.88rem;
+  margin-top: 3px;
+}
+
+.point-niveau {
+  flex: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* extrémités du trajet */
+.terminus-item {
+  position: relative;
+  margin-left: 44px;
+  padding: 6px 0 16px;
+  color: var(--texte-secondaire);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.terminus-item::before {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-60%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--fond);
+}
+
+/* ---------- Écran 3 : fiche point ---------- */
+
+.fiche-entete {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 16px;
+  border-radius: var(--rayon);
+  margin-bottom: 16px;
+}
+
+.fiche-entete.fond-standard { background: var(--standard-fond); border: 1px solid var(--standard-vif); }
+.fiche-entete.fond-renforcee { background: var(--renforcee-fond); border: 1px solid var(--renforcee-vif); }
+.fiche-entete.fond-critique { background: var(--critique-fond); border: 1px solid var(--critique-vif); }
+
+.fiche-icone { flex: none; width: 64px; height: 64px; }
+.fiche-icone svg { width: 64px; height: 64px; }
+
+.fiche-nom {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.fiche-niveau-libelle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.texte-standard { color: var(--standard); }
+.texte-renforcee { color: var(--renforcee); }
+.texte-critique { color: var(--critique); }
+
+.bloc-fiche {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(27, 36, 48, 0.06);
+}
+
+.bloc-fiche h3 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texte-secondaire);
+  margin-bottom: 8px;
+}
+
+.bloc-fiche p {
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.bloc-anticiper { border-left: 6px solid var(--accent); }
+
+.chip-temporaire {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(47, 128, 237, 0.12);
+  color: #1d5fc0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fiche-source {
+  color: var(--texte-secondaire);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.btn-conduite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px;
+  border: none;
+  border-radius: var(--rayon);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-conduite:active { filter: brightness(1.1); }
+
+/* ---------- Écrans sombres : vision future et démo du service ---------- */
+
+.vue-sombre {
+  /* ces écrans simulent l'affichage à bord : ils restent volontairement sombres */
+  --fond: #10151d;
+  --fond-carte: #1a2230;
+  --fond-carte-hover: #222c3e;
+  --bordure: #2c3a50;
+  --texte: #f2f5f9;
+  --texte-secondaire: #a8b4c4;
+
+  --standard: #f2c94c;
+  --renforcee: #f2994a;
+  --critique: #eb5757;
+
+  --standard-vif: #f2c94c;
+  --renforcee-vif: #f2994a;
+  --critique-vif: #eb5757;
+
+  --standard-fond: rgba(242, 201, 76, 0.14);
+  --renforcee-fond: rgba(242, 153, 74, 0.14);
+  --critique-fond: rgba(235, 87, 87, 0.16);
+
+  background: #05080d;
+  color: var(--texte);
+}
+
+.barre-conduite { background: #0d1219; }
+
+.contenu-conduite {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.alerte-conduite {
+  width: 100%;
+  border-radius: 24px;
+  padding: 36px 24px;
+  border: 3px solid;
+}
+
+.alerte-conduite.fond-standard { background: var(--standard-fond); border-color: var(--standard-vif); }
+.alerte-conduite.fond-renforcee { background: var(--renforcee-fond); border-color: var(--renforcee-vif); }
+.alerte-conduite.fond-critique { background: var(--critique-fond); border-color: var(--critique-vif); }
+
+.alerte-icone { width: 110px; height: 110px; margin: 0 auto; }
+.alerte-icone svg { width: 110px; height: 110px; }
+
+.alerte-message {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-top: 20px;
+}
+
+.alerte-distance {
+  font-size: 1.15rem;
+  color: var(--texte-secondaire);
+  margin-top: 10px;
+}
+
+.alerte-niveau {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 8px 20px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.alerte-conseil {
+  margin-top: 22px;
+  color: var(--texte-secondaire);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.conduite-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--bordure);
+  background: #0d1219;
+}
+
+.btn-nav {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--bordure);
+  background: var(--fond-carte);
+  color: var(--texte);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-nav:disabled { opacity: 0.35; cursor: default; }
+
+.conduite-compteur {
+  color: var(--texte-secondaire);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* ---------- Écran 5 : démo du service ---------- */
+
+.contenu-sim {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 24px;
+}
+
+.sim-statut {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 16px;
+  text-align: center;
+  position: relative;
+}
+
+.sim-etat {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.sim-sous-etat {
+  color: var(--texte-secondaire);
+  font-size: 0.95rem;
+  margin-top: 6px;
+  min-height: 1.4em;
+}
+
+.sim-vitesse {
+  margin-top: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--texte-secondaire);
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-neutre {
+  color: var(--texte-secondaire);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  border: 1px dashed var(--bordure);
+  border-radius: var(--rayon);
+  padding: 20px 12px;
+  width: 100%;
+}
+
+.sim-alerte {
+  width: 100%;
+  border-radius: 18px;
+  padding: 18px 12px;
+  border: 3px solid;
+}
+
+.sim-alerte.fond-standard { background: var(--standard-fond); border-color: var(--standard-vif); }
+.sim-alerte.fond-renforcee { background: var(--renforcee-fond); border-color: var(--renforcee-vif); }
+.sim-alerte.fond-critique { background: var(--critique-fond); border-color: var(--critique-vif); }
+
+.sim-alerte-icone { width: 52px; height: 52px; margin: 0 auto; }
+.sim-alerte-icone svg { width: 52px; height: 52px; }
+
+.sim-alerte-message {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-top: 10px;
+}
+
+.sim-alerte-nom {
+  color: var(--texte-secondaire);
+  font-size: 0.95rem;
+  margin-top: 6px;
+}
+
+.sim-alerte-niveau {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* le thermomètre de ligne vertical, comme l'affichage de bord des bus */
+
+.sim-corps {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  min-height: 300px;
+}
+
+.sim-thermo {
+  position: relative;
+  overflow: hidden;
+  flex: 1.15;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+}
+
+.sim-thermo-inner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  transition: transform 0.15s linear;
+}
+
+.sim-thermo-ligne,
+.sim-thermo-fait {
+  position: absolute;
+  left: 18px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--bordure);
+}
+
+.sim-thermo-fait { background: var(--accent); }
+
+.sim-thermo-arret {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  transform: translateY(-50%);
+}
+
+.sim-thermo-dot {
+  flex: none;
+  margin-left: 13px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #55647a;
+  border: 3px solid #10151d;
+}
+
+.sim-thermo-arret.passe .sim-thermo-dot { background: var(--accent); }
+
+.sim-thermo-nom {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texte-secondaire);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 6px;
+}
+
+.sim-thermo-arret.prochain .sim-thermo-nom {
+  color: var(--texte);
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+.sim-thermo-point {
+  position: absolute;
+  left: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid #05080d;
+  z-index: 2;
+}
+
+.sim-thermo-point.niveau-standard { background: var(--standard-vif); }
+.sim-thermo-point.niveau-renforcee { background: var(--renforcee-vif); }
+.sim-thermo-point.niveau-critique { background: var(--critique-vif); }
+
+.sim-bus {
+  position: absolute;
+  left: 20px;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(47, 128, 237, 0.8);
+  transition: top 0.15s linear;
+  z-index: 3;
+}
+
+.sim-bus svg { width: 15px; height: 15px; }
+
+.sim-zone-alerte {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sim-compteur {
+  text-align: center;
+  color: var(--texte-secondaire);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-vitesses { display: flex; gap: 8px; }
+
+.btn-vitesse.actif {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}

@@ -1,0 +1,93 @@
+CONTEXTE DU PROJET
+
+Cliente : Laetitia, chauffeuse de bus (elle porte la vision).
+Moi : je conçois et prépare les livrables pour elle.
+
+Le problème :
+Les chauffeurs de bus, et surtout les apprentis, prennent une ligne sans
+connaître les points qui demandent une vigilance particulière pour un
+véhicule long et haut (ronds-points serrés, ponts bas, passages étroits,
+travaux, virages difficiles, arrêts compliqués à manoeuvrer, zones scolaires).
+Aujourd'hui la familiarisation à une ligne est informelle : un ancien montre,
+ou on apprend par surprise. Le risque est le plus fort dans les premières
+fois sur une ligne nouvelle, donc pour les apprentis.
+
+La vision long terme (À NE PAS CONSTRUIRE MAINTENANT) :
+Un logiciel embarqué, intégré au système du bus, qui alerte en conduite.
+Cela demande l'accord de l'opérateur, du constructeur, et une validation
+sécurité. C'est l'étape finale, pas le point de départ.
+
+OBJECTIF DE CE QU'ON CONSTRUIT ICI
+
+Un prototype cliquable qui sert UNIQUEMENT à prouver le besoin, pour le
+montrer aux supérieurs et éventuellement à Île-de-France Mobilités.
+Il doit démontrer une seule chose : si un apprenti disposait d'une fiche
+structurée des points de vigilance de sa ligne, il pourrait les anticiper
+au lieu de les découvrir en conduisant.
+
+Question de tri à chaque décision : est-ce que ça aide l'apprenti à
+anticiper le danger, oui ou non ? Si non, ça ne va pas dans le MVP.
+
+CE QU'ON FAIT, ET CE QU'ON NE FAIT PAS
+
+À faire :
+- Un prototype web, pensé mobile d'abord, qui ressemble à un écran de bord.
+- Une seule ligne d'exemple, entièrement remplie avec des données réalistes
+  (données de test que Laetitia remplacera par ses vraies observations).
+- Les données de la ligne dans un fichier séparé, simple à éditer, pour
+  qu'une personne non technique puisse le modifier.
+
+À ne pas faire (hors périmètre) :
+- Aucune intégration au véhicule, aucun GPS, aucun temps réel.
+- Aucun backend obligatoire : des données statiques suffisent.
+- Pas de compte, pas de connexion, pas de carte interactive complexe.
+
+LE MENU MVP STRICT
+
+1. Accueil / choix du trajet
+   Choisir sa ligne. Pour le prototype, une seule ligne d'exemple existe.
+
+2. Le parcours annoté (la liste)
+   La ligne présentée comme une suite ordonnée de points de vigilance,
+   du départ au terminus. Chaque point montre : son nom ou repère, son
+   type de danger, son niveau d'attention (léger / moyen / élevé, avec
+   un code couleur), et un pictogramme clair. On tape un point pour ouvrir
+   sa fiche.
+
+3. La fiche point de vigilance (LE COEUR)
+   Le détail d'un point. Elle contient :
+   - Localisation (ex : rond-point, nom de rue, arrêt le plus proche).
+   - Type de danger (rond-point serré, pont bas, gabarit étroit, travaux,
+     virage difficile, arrêt délicat, zone scolaire ou piétonne).
+   - Niveau d'attention (léger / moyen / élevé).
+   - Ce qu'il faut anticiper (une à deux lignes, concret).
+   - Conseil de manoeuvre (optionnel, une ligne).
+   - Pictogramme du type de danger.
+
+4. Aperçu conduite (l'écran qui rend la démo concrète)
+   Une vue simple et statique qui simule ce que le chauffeur verrait à
+   l'approche d'un point : le pictogramme, le message court (ex : "Rond-point
+   serré dans 200 m"), le niveau d'attention en couleur. Pas de vraie
+   géolocalisation : on montre à quoi ça ressemblerait, on ne le construit
+   pas dans le véhicule.
+
+MODÈLE DE DONNÉES D'UN POINT DE VIGILANCE
+
+Prévoir pour chaque point : identifiant, ordre dans le parcours, nom ou
+repère, type de danger, niveau d'attention, texte "à anticiper", conseil
+de manoeuvre (optionnel), pictogramme associé. Regrouper tous les points
+d'une ligne dans un seul fichier de données éditable.
+
+DIRECTION VISUELLE
+
+- Sobre, très lisible, gros caractères : pensé pour un coup d'oeil rapide.
+- Pictogrammes clairs et code couleur par niveau d'attention.
+- Interface en français.
+- Rien de superflu : la clarté prime sur le style.
+
+CONTRAINTES DE RÉDACTION
+
+- Interface et textes en français.
+- Aucun tiret long dans les textes affichés (utiliser virgules, deux-points
+  ou parenthèses).
+- Garder le tout autosuffisant et facile à lancer.
