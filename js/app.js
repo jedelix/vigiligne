@@ -609,7 +609,9 @@
     if (sim.capCamera === null) sim.capCamera = capActuel;
     sim.capCamera = (sim.capCamera + differenceCap(sim.capCamera, capActuel) * 0.18 + 360) % 360;
 
-    var centreCamera = avancerDansDirection(coordonnee, sim.capCamera, 90);
+    /* Garder le bus dans la zone visible, au-dessus du bandeau d'alerte.
+       Un cadrage trop loin vers l'avant le plaçait derrière l'alerte sur iPhone. */
+    var centreCamera = avancerDansDirection(coordonnee, sim.capCamera, 45);
     carte.easeTo({
       center: [centreCamera[1], centreCamera[0]],
       bearing: sim.capCamera,
