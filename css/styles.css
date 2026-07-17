@@ -999,12 +999,18 @@ body {
   white-space: nowrap;
 }
 
-.sim-bus-carte {
-  border: 0;
-  background: transparent;
+.sim-bus-fixe {
+  position: absolute;
+  left: 50%;
+  top: 66%;
+  z-index: 505;
+  width: 38px;
+  height: 38px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 
-.sim-bus-carte span {
+.sim-bus-fixe span {
   width: 38px;
   height: 38px;
   border: 4px solid #fff;
@@ -1017,6 +1023,26 @@ body {
   box-shadow: 0 3px 12px rgba(20, 38, 69, 0.45);
   font-size: 0.85rem;
   font-weight: 900;
+  transform: scale(0.78);
+  transform-origin: center;
+}
+
+.sim-bus-fixe b {
+  position: absolute;
+  top: -10px;
+  color: #2f80ed;
+  font-size: 0.8rem;
+  line-height: 1;
+  text-shadow: 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.sim-bus-fixe em {
+  font-style: normal;
+}
+
+.sim-carte .leaflet-map-pane {
+  transition: transform 0.16s linear;
+  will-change: transform;
 }
 
 .leaflet-control-attribution {

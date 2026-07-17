@@ -414,6 +414,7 @@
       mult: 1,
       enPause: false,
       vitesse: 0,
+      capCamera: null,
       alerteAffichee: null,
       dernierTick: performance.now(),
       timer: null
@@ -449,7 +450,16 @@
       return;
     }
 
-    carte = L.map("sim-carte", { zoomControl: false, attributionControl: true });
+    carte = L.map("sim-carte", {
+      zoomControl: false,
+      attributionControl: true,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      boxZoom: false,
+      keyboard: false
+    });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -482,18 +492,59 @@
       }).bindTooltip(point.donnees.nom).addTo(carte);
     });
 
-    sim.marqueurBus = L.marker(TRAJET_48.coordinates[0], {
-      icon: L.divIcon({
-        className: "sim-bus-carte",
-        html: '<span aria-label="Bus">48</span>',
-        iconSize: [38, 38],
-        iconAnchor: [19, 19]
-      }),
-      interactive: false
-    }).addTo(carte);
-
-    carte.setView(TRAJET_48.coordinates[0], 16);
+    carte.setView(TRAJET_48.coordinates[0], 17);
     setTimeout(function () { if (carte) carte.invalidateSize(); }, 0);
+  }
+
+  function indexApresDistance(indexDepart, metres) {
+    var index = Math.floor(indexDepart);
+    var total = 0;
+    while (index < TRAJET_48.coordinates.length - 1 && total < metres) {
+      total += distanceMetres(TRAJET_48.coordinates[index], TRAJET_48.coordinates[index + 1]);
+      index += 1;
+    }
+    return index;
+  }
+
+  function avancerDansDirection(coord, capDegres, metres) {
+    var rayon = 6371000;
+    var angle = metres / rayon;
+    var direction = radians(capDegres);
+    var latitude = radians(coord[0]);
+    var longitude = radians(coord[1]);
+    var latitudeArrivee = Math.asin(
+      Math.sin(latitude) * Math.cos(angle) +
+      Math.cos(latitude) * Math.sin(angle) * Math.cos(direction)
+    );
+    var longitudeArrivee = longitude + Math.atan2(
+      Math.sin(direction) * Math.sin(angle) * Math.cos(latitude),
+      Math.cos(angle) - Math.sin(latitude) * Math.sin(latitudeArrivee)
+    );
+    return [latitudeArrivee * 180 / Math.PI, longitudeArrivee * 180 / Math.PI];
+  }
+
+  function orienterCamera(indexRoute, coordonnee) {
+    if (!carte) return;
+
+    var indexDevant = indexApresDistance(indexRoute, 20);
+    var coordonneeDevant = TRAJET_48.coordinates[indexDevant];
+    var capActuel = cap(coordonnee, coordonneeDevant);
+    if (sim.capCamera === null) sim.capCamera = capActuel;
+    sim.capCamera = (sim.capCamera + differenceCap(sim.capCamera, capActuel) * 0.18 + 360) % 360;
+
+    var centreCamera = avancerDansDirection(coordonnee, sim.capCamera, 90);
+    carte.panTo(centreCamera, { animate: false });
+
+    var panneau = carte.getPane("mapPane");
+    var position = L.DomUtil.getPosition(panneau) || { x: 0, y: 0 };
+    var taille = carte.getSize();
+    var transformation = panneau.style.transform || "";
+    transformation = transformation.replace(/\s*rotate\([^)]*\)\s*scale\([^)]*\)\s*$/, "");
+    panneau.style.transformOrigin =
+      (taille.x / 2 - position.x) + "px " + (taille.y / 2 - position.y) + "px";
+    panneau.style.transform = transformation +
+      " rotate(" + (-sim.capCamera) + "deg) scale(1.28)";
+
   }
 
   function majStatut(titre, sousTitre) {
@@ -557,8 +608,7 @@
       var reste = [coordonnee].concat(TRAJET_48.coordinates.slice(indexEntier + 1));
       sim.lignePassee.setLatLngs(passe);
       sim.ligneRestante.setLatLngs(reste);
-      sim.marqueurBus.setLatLng(coordonnee);
-      carte.panTo(coordonnee, { animate: false });
+      orienterCamera(indexRoute, coordonnee);
 
       var prochain = Math.min(Math.ceil(sim.pos + 0.001), sim.arrets.length - 1);
       sim.marqueursArrets.forEach(function (marqueur, index) {
