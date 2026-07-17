@@ -611,7 +611,7 @@
 
     /* Garder le bus dans la zone visible, au-dessus du bandeau d'alerte.
        Un cadrage trop loin vers l'avant le plaçait derrière l'alerte sur iPhone. */
-    var centreCamera = avancerDansDirection(coordonnee, sim.capCamera, 45);
+    var centreCamera = coordonnee;
     carte.easeTo({
       center: [centreCamera[1], centreCamera[0]],
       bearing: sim.capCamera,
