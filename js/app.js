@@ -663,11 +663,6 @@
     var indexRoute = indexFormeCourant();
     var indexEntier = Math.floor(indexRoute);
     var coordonnee = coordonneeCourante(indexRoute);
-    var positionArrondie = Math.round(sim.pos);
-    if ((sim.etat === "arret" || sim.etat === "fini") &&
-        Math.abs(sim.pos - positionArrondie) < 0.001) {
-      coordonnee = [sim.arrets[positionArrondie].lat, sim.arrets[positionArrondie].lon];
-    }
 
     if (carte && sim.cartePrete) {
       var passe = TRAJET_48.coordinates.slice(0, indexEntier + 1).concat([coordonnee]);
